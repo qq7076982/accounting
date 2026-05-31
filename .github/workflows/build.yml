@@ -32,4 +32,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: accounting-apk
-          path: build/app/outputs/flutter-apk/app-arm64-debug.apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
