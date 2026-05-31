@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:io';
+import 'sms_import_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -181,6 +182,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: '修改励志语',
               subtitle: _quote,
               onTap: _editQuote,
+            ),
+          ]),
+          const SizedBox(height: 20),
+          _buildSection('短信导入', [
+            _buildListTile(
+              icon:'📨',
+              title: '从短信导入',
+              subtitle: '粘贴银行短信批量导入记录',
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const SmsImportScreen()));
+              },
             ),
           ]),
           const SizedBox(height: 20),
