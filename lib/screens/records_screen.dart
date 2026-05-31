@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/record.dart';
+import 'edit_record_screen.dart';
 
 class RecordsScreen extends StatefulWidget {
   const RecordsScreen({super.key});
@@ -29,9 +30,7 @@ class _RecordsScreenState extends State<RecordsScreen> with WidgetsBindingObserv
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _loadRecords();
-    }
+    if (state == AppLifecycleState.resumed) _loadRecords();
   }
 
   Future<void> _loadRecords() async {
@@ -135,32 +134,57 @@ class _RecordsScreenState extends State<RecordsScreen> with WidgetsBindingObserv
         decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(12)),
         child: const Text('删除', style: TextStyle(color: Colors.white)),
       ),
-      onDismissed: (_) => _deleteRecord(r),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Text(iconMap[r.category] ?? '📝', style: const TextStyle(fontSize: 24)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(r.category, style: const TextStyle(fontWeight: FontWeight.w500)),
-                  Text('${r.date.month}/${r.date.day} ${r.note}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                ],
+      confirmDismiss: (_) async {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('删除确认'),
+            content: const Text('确定删除这条记录吗？'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
+              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('删除', style: TextStyle(color: Colors.red))),
+            ],
+          ),
+        );
+        if (confirmed == true) await _deleteRecord(r);
+        return false;
+      },
+      onDismissed: (_) {},
+      child: GestureDetector(
+        onTap: () async {
+          final result = await Navigator.push(context, MaterialPageRoute(
+            builder: (_) => EditRecordScreen(record: r),
+          ));
+          if (result == true) _loadRecords();
+        },
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Text(iconMap[r.category] ?? '📝', style: const TextStyle(fontSize: 24)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(r.category, style: const TextStyle(fontWeight: FontWeight.w500)),
+                    Text('${r.date.month}/${r.date.day} ${r.note}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                  ],
+                ),
               ),
-            ),
-            Text(
-              '${isIncome ? '+' : '-'}¥${r.amount.toStringAsFixed(2)}',
-              style: TextStyle(color: isIncome ? Colors.green : Colors.red, fontWeight: FontWeight.w600, fontSize: 15),
-            ),
-          ],
+              Text(
+                '${isIncome ? '+' : '-'}¥${r.amount.toStringAsFixed(2)}',
+                style: TextStyle(color: isIncome ? Colors.green : Colors.red, fontWeight: FontWeight.w600, fontSize: 15),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.chevron_right, color: Colors.grey, size: 18),
+            ],
+          ),
         ),
       ),
     );

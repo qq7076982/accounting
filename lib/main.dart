@@ -4,6 +4,7 @@ import 'screens/home_screen.dart';
 import 'screens/add_record_screen.dart';
 import 'screens/records_screen.dart';
 import 'screens/stats_screen.dart';
+import 'screens/settings_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,12 +49,11 @@ class _MainScreenState extends State<MainScreen> {
 
   void _onTabChanged(int index) {
     if (index == 3) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const AddRecordScreen()),
-      );
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const AddRecordScreen()));
+    } else if (index == 4) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
     } else {
-      setState(() => _currentIndex = index > 3 ? index - 1 : index);
+      setState(() => _currentIndex = index > 4 ? index - 1 : index);
     }
   }
 
@@ -79,6 +79,7 @@ class _MainScreenState extends State<MainScreen> {
                 _buildTabItem('记录', Icons.receipt_long_rounded, 1),
                 _buildTabItem('统计', Icons.bar_chart_rounded, 2),
                 _buildAddButton(),
+                _buildTabItem('设置', Icons.settings_rounded, 4),
               ],
             ),
           ),

@@ -12,13 +12,14 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<Record> _records = [];
   bool _loading = true;
-  DateTime? _lastRefresh;
+  String _quote = '理财不是一夜暴富，而是让财富慢慢增值';
+  bool _quoteEnabled = true;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _loadRecords();
+    _loadData();
   }
 
   @override
@@ -29,9 +30,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _loadRecords();
-    }
+    if (state == AppLifecycleState.resumed) _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _quote = prefs.getString('motivational_quote') ?? _quote;
+      _quoteEnabled = prefs.getString('quote_enabled') ?? 'true' == 'true';
+    });
+    await _loadRecords();
   }
 
   Future<void> _loadRecords() async {
@@ -42,7 +50,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       setState(() {
         _records = jsonList.map((e) => Record.fromJson(e)).toList();
         _loading = false;
-        _lastRefresh = DateTime.now();
       });
     } else {
       setState(() => _loading = false);
@@ -60,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   double get _balance => _totalIncome - _totalExpense;
 
   Future<void> _refresh() async {
-    await _loadRecords();
+    await _loadData();
   }
 
   @override
@@ -82,11 +89,37 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (_quoteEnabled) _buildQuoteBanner(),
           _buildBalanceCard(),
           const SizedBox(height: 16),
           _buildSummaryRow(),
           const SizedBox(height: 24),
           _buildRecentRecords(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuoteBanner() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF667EEA).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF667EEA).withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          const Text('💡', style: TextStyle(fontSize: 18)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _quote,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF667EEA), fontWeight: FontWeight.w500),
+            ),
+          ),
         ],
       ),
     );
