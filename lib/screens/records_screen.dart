@@ -9,7 +9,7 @@ class RecordsScreen extends StatefulWidget {
   State<RecordsScreen> createState() => _RecordsScreenState();
 }
 
-class _RecordsScreenState extends State<RecordsScreen> {
+class _RecordsScreenState extends State<RecordsScreen> with WidgetsBindingObserver {
   List<Record> _records = [];
   bool _loading = true;
   String _filter = '全部';
@@ -17,13 +17,21 @@ class _RecordsScreenState extends State<RecordsScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadRecords();
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _loadRecords();
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadRecords();
+    }
   }
 
   Future<void> _loadRecords() async {

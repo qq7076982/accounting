@@ -9,20 +9,29 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<Record> _records = [];
   bool _loading = true;
+  DateTime? _lastRefresh;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadRecords();
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _loadRecords();
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadRecords();
+    }
   }
 
   Future<void> _loadRecords() async {
@@ -33,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _records = jsonList.map((e) => Record.fromJson(e)).toList();
         _loading = false;
+        _lastRefresh = DateTime.now();
       });
     } else {
       setState(() => _loading = false);
@@ -159,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildRecordItem(Record r) {
     final isIncome = r.type == RecordType.income;
-    final iconMap = {'餐饮': '🍜', '交通':'🚗', '购物': '🛒', '工资': '💰', '奖金': '🎁', '投资': '📈', '房租': '🏠', '娱乐': '🎮', '医疗': '💊', '通讯': '📱', '红包': '🧧', '其他':'📝'};
+    final iconMap = {'餐饮': '🍜', '交通':'🚗', '购物': '🛒', '工资': '💰', '奖金': '🎁', '投资': '📈', '房租': '🏠', '娱乐': '🎮', '医疗': '💊', '通讯': '📱', '红包': '🧧','其他':'📝'};
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
