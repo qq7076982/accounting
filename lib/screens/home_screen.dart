@@ -37,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _quote = prefs.getString('motivational_quote') ?? _quote;
-      _quoteEnabled = prefs.getString('quote_enabled') ?? 'true' == 'true';
+      _quoteEnabled = (prefs.getString('quote_enabled') ?? 'true') == 'true';
     });
     await _loadRecords();
   }

@@ -30,7 +30,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _quote = prefs.getString(_quoteKey) ?? _defaultQuote;
-      _quoteEnabled = prefs.getString(_quoteEnabledKey) ?? 'true' == 'true';
+      _quoteEnabled = (prefs.getString(_quoteEnabledKey) ?? 'true') == 'true';
     });
   }
 

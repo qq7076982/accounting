@@ -14,6 +14,7 @@ class _RecordsScreenState extends State<RecordsScreen> with WidgetsBindingObserv
   List<Record> _records = [];
   bool _loading = true;
   String _filter = '全部';
+  String _dateFilter = '全部';
 
   @override
   void initState() {
@@ -48,9 +49,24 @@ class _RecordsScreenState extends State<RecordsScreen> with WidgetsBindingObserv
   }
 
   List<Record> get _filtered {
-    if (_filter == '收入') return _records.where((r) => r.type == RecordType.income).toList();
-    if (_filter == '支出') return _records.where((r) => r.type == RecordType.expense).toList();
-    return _records;
+    var list = _records;
+
+    // Type filter
+    if (_filter == '收入') list = list.where((r) => r.type == RecordType.income).toList();
+    if (_filter == '支出') list = list.where((r) => r.type == RecordType.expense).toList();
+
+    // Date filter
+    final now = DateTime.now();
+    if (_dateFilter == '本周') {
+      final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+      list = list.where((r) => r.date.isAfter(startOfWeek.subtract(const Duration(days: 1)))).toList();
+    } else if (_dateFilter == '本月') {
+      list = list.where((r) => r.date.year == now.year && r.date.month == now.month).toList();
+    } else if (_dateFilter == '本年') {
+      list = list.where((r) => r.date.year == now.year).toList();
+    }
+
+    return list;
   }
 
   Future<void> _deleteRecord(Record record) async {
@@ -76,6 +92,7 @@ class _RecordsScreenState extends State<RecordsScreen> with WidgetsBindingObserv
       ),
       body: Column(
         children: [
+          _buildDateFilterBar(),
           _buildFilterBar(),
           Expanded(child: _loading ? const Center(child: CircularProgressIndicator()) : _buildList()),
         ],
@@ -83,10 +100,35 @@ class _RecordsScreenState extends State<RecordsScreen> with WidgetsBindingObserv
     );
   }
 
-  Widget _buildFilterBar() {
+  Widget _buildDateFilterBar() {
+    final options = ['全部', '本周', '本月', '本年'];
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: options.map((f) => GestureDetector(
+          onTap: () => setState(() => _dateFilter = f),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: _dateFilter == f ? const Color(0xFF667EEA) : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(f, style: TextStyle(
+              fontSize: 12,
+              color: _dateFilter == f ? Colors.white : Colors.grey.shade700,
+            )),
+          ),
+        )).toList(),
+      ),
+    );
+  }
+
+  Widget _buildFilterBar() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: ['全部', '收入', '支出'].map((f) => GestureDetector(
           onTap: () => setState(() => _filter = f),
@@ -123,7 +165,7 @@ class _RecordsScreenState extends State<RecordsScreen> with WidgetsBindingObserv
 
   Widget _buildRecordItem(Record r) {
     final isIncome = r.type == RecordType.income;
-    final iconMap = {'餐饮': '🍜', '交通':'🚗', '购物': '🛒', '工资': '💰', '奖金': '🎁', '投资': '📈', '房租': '🏠', '娱乐': '🎮', '医疗': '💊', '通讯': '📱', '红包': '🧧', '其他':'📝'};
+    final iconMap = {'餐饮': '🍜', '交通':'🚗', '购物': '🛒', '工资': '💰', '奖金': '🎁', '投资': '📈', '房租': '🏠', '娱乐': '🎮', '医疗': '💊', '通讯': '📱', '红包': '🧧','其他':'📝'};
     return Dismissible(
       key: Key(r.id),
       direction: DismissDirection.endToStart,
