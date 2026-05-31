@@ -25,18 +25,29 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
     }
 
     final records = <Record>[];
+    final notRecognized = <String>[];
     final lines = text.split('\n');
 
     for (final line in lines) {
       final trimmed = line.trim();
       if (trimmed.isEmpty) continue;
       final record = SmsParser.parse(trimmed);
-      if (record != null) records.add(record);
+      if (record != null) {
+        records.add(record);
+      } else {
+        notRecognized.add(trimmed);
+      }
     }
 
     setState(() {
       _parsedRecords = records;
-      _error = records.isEmpty ? '未能识别任何记录，请检查短信格式' : null;
+      if (records.isEmpty && notRecognized.isNotEmpty) {
+        _error = '未能识别 ${notRecognized.length} 条短信。\n示例格式：\n【邮储银行】26年05月29日11:21您尾号8116账户快捷支付-支付宝，支出金额100.00元，余额83528.21元';
+      } else if (records.isEmpty) {
+        _error = '请输入正确的银行短信格式';
+      } else {
+        _error = null;
+      }
     });
   }
 

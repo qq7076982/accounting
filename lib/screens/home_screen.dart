@@ -14,6 +14,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool _loading = true;
   String _quote = '理财不是一夜暴富，而是让财富慢慢增值';
   bool _quoteEnabled = true;
+  int _lastRecordCount = 0;
 
   @override
   void initState() {
@@ -45,12 +46,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> _loadRecords() async {
     final prefs = await SharedPreferences.getInstance();
     final data = prefs.getString('records');
-    if (data != null) {
-      final List<dynamic> jsonList = json.decode(data);
-      setState(() {
-        _records = jsonList.map((e) => Record.fromJson(e)).toList();
-        _loading = false;
-      });
+    final recordCount = data != null ? (json.decode(data) as List).length : 0;
+
+    // Force refresh if record count changed (new record added/deleted)
+    if (recordCount != _lastRecordCount || _records.isEmpty) {
+      _lastRecordCount = recordCount;
+      if (data != null) {
+        final List<dynamic> jsonList = json.decode(data);
+        setState(() {
+          _records = jsonList.map((e) => Record.fromJson(e)).toList();
+          _loading = false;
+        });
+      } else {
+        setState(() => _loading = false);
+      }
     } else {
       setState(() => _loading = false);
     }
@@ -67,6 +76,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   double get _balance => _totalIncome - _totalExpense;
 
   Future<void> _refresh() async {
+    _lastRecordCount = -1; // Force refresh
     await _loadData();
   }
 

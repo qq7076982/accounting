@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'dart:io';
 import 'sms_import_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -18,8 +17,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   String _quote = _defaultQuote;
   bool _quoteEnabled = true;
-  bool _checkingUpdate = false;
-  String? _updateStatus;
 
   @override
   void initState() {
@@ -73,86 +70,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _checkUpdate() async {
-    setState(() {
-      _checkingUpdate = true;
-      _updateStatus = null;
-    });
-
+  Future<void> _openDownloadPage() async {
+    const url = 'https://github.com/qq7076982/accounting/releases';
     try {
-      const tokenFile = '/Users/xie/Desktop/github_token.txt';
-      final file = File(tokenFile);
-      if (!await file.exists()) {
-        setState(() => _updateStatus = 'Token文件不存在');
-        return;
-      }
-      final token = (await file.readAsString()).trim();
-
-      // Get latest run
-      final runsRes = await http.get(
-        Uri.parse('https://api.github.com/repos/qq7076982/accounting/actions/runs'),
-        headers: {'Authorization': 'token $token', 'Accept': 'application/vnd.github.v3+json'},
-      );
-      if (runsRes.statusCode != 200) {
-        setState(() => _updateStatus = '网络错误: ${runsRes.statusCode}');
-        return;
-      }
-
-      final runsData = json.decode(runsRes.body);
-      final latestRun = runsData['workflow_runs'][0];
-      if (latestRun['conclusion'] != 'success') {
-        setState(() => _updateStatus = '最新版本编译失败，请稍后重试');
-        return;
-      }
-
-      // Get artifact
-      final artifactRes = await http.get(
-        Uri.parse('https://api.github.com/repos/qq7076982/accounting/actions/artifacts'),
-        headers: {'Authorization': 'token $token', 'Accept': 'application/vnd.github.v3+json'},
-      );
-      if (artifactRes.statusCode != 200) {
-        setState(() => _updateStatus = '获取下载链接失败');
-        return;
-      }
-
-      final artifactData = json.decode(artifactRes.body);
-      if (artifactData['total_count'] == 0) {
-        setState(() => _updateStatus = '未找到APK文件');
-        return;
-      }
-
-      final artifactId = artifactData['artifacts'][0]['id'];
-      final downloadUrl = artifactData['artifacts'][0]['archive_url'];
-
-      setState(() {
-        _updateStatus = '有新版本！正在准备下载...';
-      });
-
-      // Download APK
-      final downloadRes = await http.get(
-        Uri.parse('https://api.github.com/repos/qq7076982/accounting/actions/artifacts/$artifactId/zip'),
-        headers: {'Authorization': 'token $token', 'Accept': 'application/vnd.github.v3+json'},
-      );
-
-      if (downloadRes.statusCode == 302 || downloadRes.statusCode == 200) {
-        final apkPath = '/tmp/accounting-update.apk';
-        await File(apkPath).writeAsBytes(downloadRes.bodyBytes);
-
-        setState(() {
-          _updateStatus = '新版本APK已下载: $apkPath';
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('APK已下载，请到 /tmp 目录手动安装'),
-          duration: const Duration(seconds: 5),
-        ));
-      } else {
-        setState(() => _updateStatus = '下载失败: ${downloadRes.statusCode}');
-      }
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } catch (e) {
-      setState(() => _updateStatus = '检查更新失败: $e');
-    } finally {
-      setState(() => _checkingUpdate = false);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('无法打开链接，请手动访问 GitHub')),
+      );
     }
   }
 
@@ -171,14 +96,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           _buildSection('理财励志语', [
             _buildSwitchTile(
-              icon:'💬',
+              icon: '💬',
               title: '显示励志语',
               subtitle: '首页余额上方显示',
               value: _quoteEnabled,
               onChanged: _toggleQuote,
             ),
             _buildListTile(
-              icon:'✏️',
+              icon: '✏️',
               title: '修改励志语',
               subtitle: _quote,
               onTap: _editQuote,
@@ -187,7 +112,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 20),
           _buildSection('短信导入', [
             _buildListTile(
-              icon:'📨',
+              icon: '📨',
               title: '从短信导入',
               subtitle: '粘贴银行短信批量导入记录',
               onTap: () {
@@ -198,13 +123,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 20),
           _buildSection('版本更新', [
             _buildListTile(
-              icon:'📦',
+              icon: '📦',
               title: '检查更新',
-              subtitle: _checkingUpdate ? '检查中...' : (_updateStatus ?? '点击检查新版本'),
-              trailing: _checkingUpdate
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.chevron_right, color: Colors.grey),
-              onTap: _checkingUpdate ? null : _checkUpdate,
+              subtitle: '点击查看最新版本',
+              trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+              onTap: _openDownloadPage,
             ),
           ]),
           const SizedBox(height: 20),
