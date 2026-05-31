@@ -20,6 +20,12 @@ class _RecordsScreenState extends State<RecordsScreen> {
     _loadRecords();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadRecords();
+  }
+
   Future<void> _loadRecords() async {
     final prefs = await SharedPreferences.getInstance();
     final data = prefs.getString('records');
